@@ -140,6 +140,25 @@ def get_url_filename(metadata: dict, default: Optional[str] = None) -> str:
     return default
 
 
+def get_url(metadata: dict, default: Optional[str] = None) -> str:
+    """Method responsible to get the pypi url
+
+    :param metadata: Dictionary with the all package metadata filled
+    :param default: default value for the package filename
+    :return: filename and extension to download the file on pypi
+    """
+    if default is None:
+        default = "https://pypi.io/packages/sources/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz"
+    if "urls" not in metadata:
+        return default
+
+    version = metadata["info"]["version"]
+    for pkg_url in metadata["urls"]:
+        if pkg_url["packagetype"] == "sdist" and version in pkg_url["filename"]:
+            return pkg_url["url"]
+    return default
+
+
 def get_sha256_from_pypi_metadata(pypi_metadata: dict) -> str:
     """Get the sha256 from pypi metadata
 
@@ -287,8 +306,7 @@ def get_pypi_metadata(config: Configuration) -> dict:
         "url": info.get("home_page"),
         "license": info.get("license"),
         "source": {
-            "url": "https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/"
-            f"{get_url_filename(metadata)}",
+            "url": f"{get_url(metadata)}",
             "sha256": get_sha256_from_pypi_metadata(metadata),
         },
         "sdist_url": sdist_url,
